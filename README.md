@@ -32,7 +32,7 @@ To run this sample, follow these steps:
 
 1. Download and then extract the sample.
 
-2. Expand the extracted **On-Device-Authentication-Sample** folder, and then compress the contents in to a ZIP file.
+2. Expand the extracted **on-device-authentication-channel** folder, and then compress the contents in to a ZIP file.
 
 3.  Follow the steps in [Loading and Running Your Application](https://developer.roku.com/en-gb/docs/developer-program/getting-started/developer-setup.md#step-1-set-up-your-roku-device-to-enable-developer-settings) to enable developer mode on your device and sideload the ZIP file containing the sample onto it.  Optionally, you can launch the sample channel via the device UI. The sample channel is named **On Device Authentication Sample (dev)**.
 
