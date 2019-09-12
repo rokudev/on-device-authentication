@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="RegTask" extends="task">
+
+	<interface>
+		<field id="request" type="assocarray"/>
+		<field id="response" type="string" />
+	</interface>
+
+	<script type="text/brightscript" uri="pkg:/components/RegTask.brs" />
+</component>

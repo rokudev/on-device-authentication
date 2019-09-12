@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--********** Copyright 2016 Roku Corp.  All Rights Reserved. **********-->
+
+
+<component name="MainScene" extends="Scene" >
+
+<script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
+
+
+
+    <children>
+        <group>
+            <MarkupGrid
+            id="productGrid"
+            itemComponentName="ChannelStoreProduct"
+            itemSpacing="[20, 20]"
+            rowHeights="[150, 150]"
+            columnWidths="[350,350,350]"
+            numColumns="4"
+            numRows="3"
+            translation="[50, 100]" />
+
+            <ChannelStore
+            id="store"
+            fakeServer="false" />
+            <!-- another way to call the command -->
+            <!-- command="getCatalog"  -->
+        </group>
+        <Label
+            id = "hint"
+            height = "250"
+            width = "320"
+            wrap = "true"
+            horizAlign = "right"
+            text = "Press * to delete the sample access token in the sample registry"
+            font = "font:SmallestSystemFont"
+            translation = "[860,35]"
+        />
+    </children>
+
+</component>
