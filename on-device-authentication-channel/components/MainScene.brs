@@ -5,6 +5,9 @@ sub init()
     m.store.ObserveField("purchases", "onGetPurchases")
     m.store.ObserveField("userData", "onGetUserData")
 
+    m.store.ObserveField("storeChannelCredDataStatus", "onStoreChannelCredData")
+    m.store.ObserveField("channelCred", "onGetChannelCred")
+
     m.productGrid = m.top.FindNode("productGrid")
     m.productGrid.ObserveField("itemSelected", "onProductSelected")
     m.productGrid.SetFocus(true)
@@ -27,6 +30,7 @@ sub init()
     m.devEntitlement = invalid
     m.publisherAccessToken = invalid
     m.itemSelected = invalid
+    m.clearTokenReq = false
     m.devAPIKey = "DEV API KEY GOES HERE"
 
     ' check and see if any previous purchases have been made
@@ -146,9 +150,19 @@ function verifyAccessToContent() as Void
     makeRequest("registry", {section: "sample", command: "read", key: "sample_access_token", value: ""}, "validateInactiveRokuSub")
 end function
 
-function getDevInfo(msg as Object)
+' handle response from validate-transaction'
+function getDevInfo(msg as Object) as void
     ? "< getting device info: getDevInfo"
     response = msg.getData()
+    if response.code <> 200
+        ? "Validate transaction failed, check if API key and transaction ID are valid"
+        ' dialogBox = CreateObject("roSGNode", "Dialog")
+        m.dialogBox.message = "Error: " + chr(10) + "Validate transaction failed: check if API key and transaction ID are valid"
+        m.dialogBox.buttons = ["Go back to Channel Add-ons UI"]
+        m.top.dialog = m.dialogBox
+        return
+    end if
+    
     xml = createObject("roXMLElement")
     xml.parse(response.content)
     m.devEntitlement = (xml.getNamedElements("isEntitled")[0].getText() = "true")
@@ -200,9 +214,36 @@ function validateInactiveRokuSub(msg as Object)
         end if
     else ' device registry does not have valid purchaser access token and publisher system has entitlement
         ? "device either doesn't have valid access token and/or no entitlement in publisher system"
-        'create new subscription through rokupay
-        ' get customer's email address
-        m.store.command = "getUserData"
+        m.store.command = "getChannelCred"
+    end if
+end function
+
+function onGetChannelCred()
+    print "> is access token stored in Roku Cloud?"
+    ' if token matches - '
+    if (m.store.channelCred <> invalid)
+      if m.store.channelCred.status = 0
+          if m.store.channelCred.json <> invalid and m.store.channelCred.json <> "{}"
+              json = parsejson(m.store.channelCred.json)
+              if (json <> invalid) and (json.roku_pucid <> invalid and json.roku_pucid <> "{}")
+                  ' check that json.token_type is urn:roku:pucid:token_type:pucid_token'
+                  tok = json.channel_data
+                  print "channel cred= "; json
+                  if ((tok = m.publisherAccessToken) and (m.publisherEntitlement = "true"))
+                      'write publisher token to registry'
+                      print "Yes - token store in cloud"
+                      writeAccessToken()
+                  else
+                      'create new subscription through rokupay
+                      ' get customer's email address
+                      print "No - go to create new subscription"
+                      m.store.command = "getUserData"
+                  end if
+              end if
+          end if
+      else
+          print "non-zero status = "; m.store.channelCred.status
+      end if
     end if
 end function
 
@@ -287,18 +328,33 @@ function onOrderStatus(msg as Object)
     end if
 end function
 
-function validateOrder(msg as Object)
+function validateOrder(msg as Object) as void
     ? "validating order ..."
     response = msg.getData()
+    if response.code <> 200
+        ? "Validate transaction failed, check if API key and transaction ID are valid"
+        ' dialogBox = CreateObject("roSGNode", "Dialog")
+        m.dialogBox.message = "Error: " + chr(10) + "Validate transaction failed: check if API key and transaction ID are valid"
+        m.dialogBox.buttons = ["Go back to Channel Add-ons UI"]
+        m.top.dialog = m.dialogBox
+        return
+    end if
 
     xml = createObject("roXMLElement")
     xml.parse(response.content)
     isEntitled = (xml.getNamedElements("isEntitled")[0].getText() = "true")
     ? "< new purchase is entitled: " isEntitled
     if isEntitled = true
-        ? "order is entitled and grant access to user"
+        print "order is entitled, store access token on device and grant access to user"
         m.itemSelected.productBought = true
-        grantAccess()
+        #if sampleHardCodedValues
+            m.publisherAccessToken = "TOK8ZQEDDR8AWVJF8AH"
+            writeAccessToken()
+        #else
+            makeRequest("url", {uri: "PUBLISHER TOKEN KEY LINK GOES HERE"}, "getWriteAccessToken")
+        #end if
+
+        'grantAccess()
     else
         ? "order is not entitled, create new subscription again"
         ' dialogBox = CreateObject("roSGNode", "Dialog")
@@ -319,11 +375,27 @@ function writeAccessToken()
     ' write access token from publisher server and store on device
     ? "< writing access token from publisher server " m.publisherAccessToken
     makeRequest("registry" , {section: "sample", command: "write", key: "sample_access_token", value: m.publisherAccessToken }, "onAccessTokenWrite")
+    print "  also write the access token in Roku Cloud"
+    m.store.channelCredData = m.publisherAccessToken
+    m.store.command = "storeChannelCredData"
 end function
 
 function onAccessTokenWrite(msg)
-    ? "> finished writing access token" msg
-    grantAccess()
+    print "> finished writing access token" msg
+end function
+
+function onStoreChannelCredData() as void
+    print "> finished storing access token in Roku Cloud"
+    if (m.store.storeChannelCredDataStatus <> invalid)
+        print "- response: " m.store.storeChannelCredDataStatus.response
+        print "- status: " m.store.storeChannelCredDataStatus.status
+    end if
+    ' Grant access to the user'
+    if m.clearTokenReq = true
+        m.clearTokenReq = false
+    else
+        grantAccess()
+    end if
 end function
 
 sub dismissdialog()
@@ -359,6 +431,12 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
         else
             if (key = "options") then
                 makeRequest("registry" , {section: "", command: "deleteRegistry", key: "", value: "" }, "")
+
+                ' Delete the publisher access token from Roku Cloud
+                m.clearTokenReq = true
+                m.store.channelCredData = ""
+                m.store.command = "storeChannelCredData"
+
                 m.dialogBox.message = "Information: " + chr(10) + "Deleted the sample registry. To repurchase items, please void the transactions at:" + chr(10) + "https://developer.roku.com/developer > Manage Test Users > View (under transactions) > Void transactions"
                 m.dialogBox.buttons = ["Understood"]
                 m.top.dialog = m.dialogBox
