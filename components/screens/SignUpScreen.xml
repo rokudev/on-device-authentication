@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--********** Copyright 2021 Roku Corp.  All Rights Reserved. **********-->
+
+<component name="SignUpScreen" extends="Group" >
+
+  <script type="text/brightscript" uri="pkg:/components/screens/SignUpScreen.brs"/>
+  <script type="text/brightscript" uri="pkg:/source/utils.brs" />
+
+  <interface>
+      <field id="email" type="string" />
+      <field id="setup" type="boolean" />
+  </interface>
+
+  <children>
+    <Poster
+      id="signUpPoster"
+      uri="pkg:/images/roku-developers-top.jpg"
+      width="1280"
+      height="720"
+      translation="[0,0]" />
+    <Label
+      id="SignUpTitle"
+      height="50"
+      width="600"
+      text = "Sign In to your account"
+      translation="[120,205]"
+      font = "font:LargeBoldSystemFont" />
+    <TextEditBox
+      id = "SignupEmail"
+      height="50"
+      width="600"
+      translation="[100,240]"
+      clearOnDownKey="false"
+      hintText = "Enter user email"/>
+    <Button id="signUpButton" text="Sign Up" visible="true" showFocusFootprint="true"
+            minWidth="140" height="72"
+            iconUri="" focusedIconUri="" translation="[100,300]"/>
+    <Label id="signUpTips" text="Press OK to enter email, then press Down key"
+           translation="[260,320]" />
+    <StandardKeyboardDialog id="signupKeyboard"
+      width="1020" height="565" visible="false" />
+  </children>
+</component>

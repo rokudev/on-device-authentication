@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--********** Copyright 2021 Roku Corp.  All Rights Reserved. **********-->
+
+<component name="SignInScreen" extends="Group" >
+
+  <script type="text/brightscript" uri="pkg:/components/screens/SignInScreen.brs"/>
+  <script type="text/brightscript" uri="pkg:/source/utils.brs" />
+
+  <interface>
+      <field id="email" type="string" />
+      <field id="password" type="string" />
+      <field id="setup" type="boolean" />
+  </interface>
+
+  <children>
+    <Poster
+      id="signInPoster"
+      uri="pkg:/images/roku-developers-top.jpg"
+      width="1280"
+      height="720"
+      translation="[0,0]" />
+    <Label
+      id="SignInTitle"
+      height="50"
+      width="600"
+      text = "Create your account"
+      translation="[120,205]"
+      font = "font:LargeBoldSystemFont" />
+    <TextEditBox
+      id = "SigninEmail"
+      height="50"
+      width="600"
+      translation="[100,240]"
+      clearOnDownKey="false"
+      hintText = "Enter user email"/>
+    <TextEditBox
+      id = "SigninPassword"
+      height="50"
+      width="600"
+      translation="[100,295]"
+      clearOnDownKey="false"
+      secureMode="true"
+      hintText = "Enter user password"/>
+    <Button id="signInButton" text="Sign In" visible="true" showFocusFootprint="true"
+            minWidth="140" height="72"
+            iconUri="" focusedIconUri="" translation="[100,360]"/>
+    <Label id="signInTips" text="Press OK to enter password, then press Down key"
+           translation="[260,380]" />
+    <StandardKeyboardDialog id="signinKeyboard"
+      width="1020" height="565" visible="false" />
+  </children>
+</component>

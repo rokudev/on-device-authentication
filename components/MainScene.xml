@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--********** Copyright 2016 Roku Corp.  All Rights Reserved. **********-->
+
+
+<component name="MainScene" extends="Scene" >
+
+<script type="text/brightscript" uri="pkg:/components/MainScene.brs" />
+<script type="text/brightscript" uri="pkg:/source/utils.brs" />
+
+    <interface>
+        <field id="response" type="assocarray" />
+    </interface>
+
+    <children>
+        <group id="productSelectScreen" visible="false">
+            <MarkupGrid
+            id="productGrid"
+            itemComponentName="ChannelStoreProduct"
+            itemSpacing="[20, 20]"
+            rowHeights="[150, 150]"
+            columnWidths="[350,350,350]"
+            numColumns="4"
+            numRows="3"
+            translation="[50, 120]" />
+
+            <ChannelStore
+            id="store"
+            fakeServer="false" />
+            <!-- another way to call the command -->
+            <!-- command="getCatalog"  -->
+        </group>
+
+        <ContentScreen
+          id = "contentScreen"
+          translation = "[0,120]"
+          visible = "false">
+        </ContentScreen>
+
+        <!-- Two labels are overhang -->
+        <Label
+            id = "hint"
+            height = "250"
+            width = "320"
+            wrap = "true"
+            horizAlign = "right"
+            text = "Press * to delete the sample access token in the sample registry"
+            font = "font:SmallestSystemFont"
+            visible = "false"
+            translation = "[860,35]"
+        />
+
+        <Label
+            id = "selectHint"
+            height = "250"
+            width = "750"
+            wrap = "true"
+            horizAlign = "left"
+            text = "Select a plan, then press OK to purchase"
+            font = "font:LargeBoldSystemFont"
+            visible = "false"
+            translation = "[50,35]"
+        />
+
+        <Group
+          id = "landingScreen"
+          translation = "[0,0]"
+          visible = "false">
+          <Poster
+            id="landingPoster"
+            uri="pkg:/images/roku-developers-top.jpg"
+            width="1280"
+            height="720"
+            translation="[0,0]" />
+          <Label
+            id="landingTitle"
+            height="50"
+            width="600"
+            text = "Select one of the options to continue"
+            translation="[200,275]"
+            font = "font:LargeBoldSystemFont" />
+          <ButtonGroup id="landingButtonGroup" iconUri="" focusedIconUri="" translation="[200,325]"/>
+        </Group>
+
+        <SignInScreen
+          id = "signInScreen"
+          translation = "[0,0]"
+          visible = "false" />
+
+        <SignUpScreen
+          id = "signUpScreen"
+          translation = "[0,0]"
+          visible = "false" />
+    </children>
+
+</component>

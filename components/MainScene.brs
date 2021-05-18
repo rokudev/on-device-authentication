@@ -10,16 +10,36 @@ sub init()
 
     m.productGrid = m.top.FindNode("productGrid")
     m.productGrid.ObserveField("itemSelected", "onProductSelected")
-    m.productGrid.SetFocus(true)
+
+    m.productSelectScreen = m.top.FindNode("productSelectScreen")
+
+    ' Added account creation initial screens'
+    m.landingScreen = m.top.FindNode("landingScreen")
+    m.landingButtonGroup = m.top.FindNode("landingButtonGroup")
+
+    m.signInScreen = m.top.FindNode("signInScreen")
+    m.signInButtonGroup = m.top.FindNode("signInButtonGroup")
+
+    m.contentScreen = m.top.FindNode("contentScreen")
+    m.contentScreenRowList = m.top.FindNode("RowList")
+
+    ' TODO: this shouldn't need to be set visible/invisible
+    m.selectHint = m.top.FindNode("selectHint")
+    m.hint = m.top.FindNode("hint")
+
+    m.top.observeField("response", "onDataRequestResponse")
+
+    ' Specify RFI type when handling userData'
+    m.rfiType = "None"
 
     m.uriFetcher = createObject("roSGNode", "UriFetcher")
 
     m.registryTask = CreateObject("roSGNode", "regTask")
     m.registryTask.control = "run"
 
-    m.keyboard = CreateObject("roSGNode", "KeyboardDialog")
-    m.keyboard.id = "KeyboardDialog"
-    m.keyboard.observeField("buttonSelected","onConfirmEmail")
+    'm.keyboard = CreateObject("roSGNode", "KeyboardDialog")
+    'm.keyboard.id = "KeyboardDialog"
+    'm.keyboard.observeField("buttonSelected","onConfirmEmail")
 
     m.dialogBox = CreateObject("roSGNode", "Dialog")
     m.dialogBox.id = "dialogBox"
@@ -48,9 +68,10 @@ function onGetPurchases() as Void
     if (m.store.purchases.GetChildCount() > 0)
         ' there exist purchases, do a quick check
         ' already updated pre existing purchased products
-        ? "verifying access to content"
+        ? "verifying access to content (during purchase)"
         ' validate the publisher information and the developer information
         verifyAccessToContent()
+
         return
     end if
     ' no active subscriptions b/c no purchases made
@@ -87,7 +108,12 @@ function onGetCatalog() as void
         end for
         m.productGrid.content = data
     end if
+    if m.init
+        ' validate the publisher information and the developer information
+        verifyAccessToContent()
+    end if
     m.init = false
+    ' Check content access if didn't purchase on Roku
 end function
 
 function onProductSelected() as void
@@ -133,7 +159,15 @@ function verifyAccessToContent() as Void
     ? "[user already purchased " count " item(s)]"
     ' find a match in the list of purchases made
     for i = 0 to count - 1
-        if (m.store.purchases.getChild(i).getFields().code = m.itemSelected.productCode)
+        #if sampleHardCodedValues
+            'xml = createObject("roXMLElement")
+            'xml.parse(response.content)
+            m.devEntitlement = true
+            ? "< dev is entitled: " m.devEntitlement
+            makeRequest("registry", {section: "sample", command: "read", key: "sample_access_token", value: ""}, "getDevInfoComplete")
+        #else
+        ' Is this check for purchased product code really needed?'
+        'if (m.store.purchases.getChild(i).getFields().code = m.itemSelected.productCode)
             ? "customer has active subscription through roku pay"
             'is an active subscription through Roku Pay
             tid = m.store.purchases.getChild(i).getFields().purchaseId
@@ -141,7 +175,8 @@ function verifyAccessToContent() as Void
             'check device has valid access token and entitlment in publisher system, query apipublroku.com for entitlement info and the registry for access token
             makeRequest("url", {uri: Substitute("https://apipub.roku.com/listen/transaction-service.svc/validate-transaction/{0}/{1}", m.devAPIKey, tid)}, "getDevInfo")
             return
-        end if
+        'end if
+        #end if
     end for
 
     ' not an active subscription b/c no matching products
@@ -162,7 +197,7 @@ function getDevInfo(msg as Object) as void
         m.top.dialog = m.dialogBox
         return
     end if
-    
+
     xml = createObject("roXMLElement")
     xml.parse(response.content)
     m.devEntitlement = (xml.getNamedElements("isEntitled")[0].getText() = "true")
@@ -201,6 +236,19 @@ function validateAccessToken(tok as Object, entitled as Boolean)
     end if
 end function
 
+function createOrder() as void
+  ' create, process, and validate order
+  myOrder = CreateObject("roSGNode", "ContentNode")
+  itemPurchased = myOrder.createChild("ContentNode")
+  ? "creating order ..."
+  ? "> product code: " m.itemSelected.productCode
+  ? "> product name: " m.itemSelected.productName
+  itemPurchased.addFields({ "code": m.itemSelected.productCode, "name": m.itemSelected.productName, "qty": 1})
+  m.store.order = myOrder
+  ? "processing order ..."
+  m.store.command = "doOrder"
+end function
+
 function validateInactiveRokuSub(msg as Object)
     ? "> validateInactiveRokuSub"
     tok = msg.getData().regVal
@@ -208,13 +256,17 @@ function validateInactiveRokuSub(msg as Object)
 
     ' validate purchaser access token and publisher system entitlement
     if (tok <> "invalid")
-        if ((tok = m.publisherAccessToken) and (m.publisherEntitlement = "true"))
+        'if ((tok = m.publisherAccessToken) and (m.publisherEntitlement = "true"))
             ? "device has valid access token and entitlement in publisher system"
             grantAccess()
-        end if
+        'end if
     else ' device registry does not have valid purchaser access token and publisher system has entitlement
         ? "device either doesn't have valid access token and/or no entitlement in publisher system"
-        m.store.command = "getChannelCred"
+        if m.itemSelected = invalid
+          m.store.command = "getChannelCred"
+        else
+          createOrder()
+        end if
     end if
 end function
 
@@ -236,8 +288,10 @@ function onGetChannelCred()
                   else
                       'create new subscription through rokupay
                       ' get customer's email address
-                      print "No - go to create new subscription"
-                      m.store.command = "getUserData"
+                      'print "No - go to create new subscription"
+                      'm.store.command = "getUserData"
+                      print "No - go to select sign up/in screen"
+                      displayLandingScreen()
                   end if
               end if
           end if
@@ -247,67 +301,152 @@ function onGetChannelCred()
     end if
 end function
 
-function onGetUserData()
-    ? "> create new subscription through roku pay"
-    if (m.store.userData <> invalid)
-        email = m.store.userData.email
-        ? "email of user is: " email
+function displayLandingScreen()
+    print "Display Sign up and Sign in buttons"
+    m.landingButtonGroup.setFocus(true)
 
-        m.keyboard.title = "Sign In"
-        m.keyboard.text = email
-        m.keyboard.buttons = ["Confirm"]
-        m.keyboard.opacity = 0.95
-        m.top.dialog = m.keyboard
-    else
-        ? "[user cancelled obtaining email, returning to displaying channel UI]"
+    Buttons = ["Sign Up","Sign In"]
+    m.landingButtonGroup.buttons = Buttons
+    m.landingButtonGroup.observeField("buttonSelected","onLandingButtonSelected")
+    m.landingScreen.visible = true
+end function
+
+function onLandingButtonSelected()
+  m.landingScreen.visible = false
+  if m.landingButtonGroup.buttonSelected = 0
+    ' sign up button pressed'
+    print "Request sign up RFI"
+    m.rfiType = "signup"
+    m.store.requestedUserData = "email"
+    m.store.command = "getUserData"
+  else if m.landingButtonGroup.buttonSelected = 1
+    ' sign in button pressed'
+    print "Request sign in RFI"
+    m.rfiType = "signin"
+    ' Set sign-in context for RFI screen
+    info = CreateObject("roSGNode", "ContentNode")
+    info.addFields({context: "signin"})
+    m.store.requestedUserDataInfo = info
+
+    m.store.requestedUserData = "email"
+    m.store.command = "getUserData"
+  'else
+    ' return to main screen'
+    'm.productSelectScreen.visible = "true"
+    'm.productGrid.SetFocus(true)
+  end if
+end function
+
+function displaySignInScreen(email as String)
+  print "Sign in screen - email= "; email
+  signinScreen = m.top.findNode("SignInScreen")
+  if signinScreen <> invalid
+    signinScreen.email = email
+    signinScreen.setup = true
+    signinScreen.visible = true
+  end if
+  'signinScreen.findNode("signinKeyboard").setFocus(true)
+end function
+
+function displaySignUpScreen(email as String)
+  print "Sign up screen - email= "; email
+  signupScreen = m.top.findNode("SignUpScreen")
+  if signupScreen <> invalid
+    signupScreen.email = email
+    signupScreen.setup = true
+    signupScreen.visible = true
+  end if
+end function
+
+sub onDataRequestResponse(msg)
+  print "entered onDataRequestResponse"
+  print "data= "; msg.getData()
+  ' handle the data and set focus on product markup grid'
+  'm.productGrid.SetFocus(true)
+  onConfirmEmail(msg)
+end sub
+
+' This is the function that handles the RFI result'
+function onGetUserData()
+    if m.rfiType = "signup"
+        if (m.store.userData <> invalid)
+            email = m.store.userData.email
+            ? "email of user is: " email
+            hashedPass = hashThePassword("<RANDOMPASS>")
+            responseAA = {type:"signup", email:email, password:hashedPass}
+            'trigger confirm email path'
+            m.top.response = responseAA
+
+            ''? "> create new subscription through roku pay"
+
+            'm.keyboard.title = "Sign In"
+            ' m.keyboard.text = email
+            ' m.keyboard.buttons = ["Confirm"]
+            ' m.keyboard.opacity = 0.95
+            ' m.top.dialog = m.keyboard
+        else
+            ? "[user cancelled obtaining email, enter email manually]"
+            email = ""
+            displaySignUpScreen(email)
+        end if
+        ' Let user retry sign up or sign in'
+    else if m.rfiType = "signin"
+        if (m.store.userData <> invalid)
+            email = m.store.userData.email
+            ? "email of user is: " email
+        else
+            ? "[user cancelled obtaining email, returning to displaying channel UI]"
+            email = ""
+        end if
+        displaySignInScreen(email)
     end if
+    m.rfiType = "None"
 end function
 
 function onConfirmEmail(msg as Object)
     ? "> confirming email ..."
-    dismissdialog()
-    m.progressdialog = createObject("roSGNode", "ProgressDialog")
-    m.progressdialog.title = "Linking Email ..."
-    m.top.dialog = m.progressdialog
+    'dismissdialog()
     ' check if email address linked to active subscription in publisher's system, logic should be on the publisher side
     #if sampleHardCodedValues
-        isLinkedEmail(invalid)
+        isLinkedEmail(msg)
     #else
+        m.progressdialog = createObject("roSGNode", "ProgressDialog")
+        m.progressdialog.title = "Linking Email ..."
+        m.top.dialog = m.progressdialog
+
         makeRequest("url", {uri: "PUBLISHER EMAIL VERIFICATION LINK GOES HERE"}, "isLinkedEmail")
+        'adjust isLinkedEmail to handle the response from publisher system'
     #end if
 end function
 
 function isLinkedEmail(msg as Object)
-    if msg = invalid then
-        ' set from the invalid if #sampleHardCodedValues is set
+    rspData = msg.getData()
+    if rspData.type = "signup" then
+        ' need to send to publisher system to create account
         isLinked = "false"
     else
-        isLinked = msg.getData().content
+        ' type = "signin" - check with publisher system
+        'isLinked = msg.getData().content
+        isLinked = "true"
     end if
 
     if isLinked = "true" 'email is linked to active subscription
         ? "email is linked to an active subscription in publisher system"
-        dismissdialog()
-        ' get access token from publisher server and store on device
         #if sampleHardCodedValues
             m.publisherAccessToken = "TOK8ZQEDDR8AWVJF8AH"
             writeAccessToken()
         #else
+            ' get access token from publisher server and store on device
+            dismissdialog()
             makeRequest("url", {uri: "PUBLISHER TOKEN KEY LINK GOES HERE"}, "getWriteAccessToken")
         #end if
         grantAccess()
     else
-        ? "email not linked to active subscription in publisher system, processing an order ..."
-        ' create, process, and validate order
-        myOrder = CreateObject("roSGNode", "ContentNode")
-        itemPurchased = myOrder.createChild("ContentNode")
-        ? "creating order ..."
-        ? "> product code: " m.itemSelected.productCode
-        ? "> product name: " m.itemSelected.productName
-        itemPurchased.addFields({ "code": m.itemSelected.productCode, "name": m.itemSelected.productName, "qty": 1})
-        m.store.order = myOrder
-        ? "processing order ..."
-        m.store.command = "doOrder"
+        ? "email not linked to active subscription in publisher system, create and process an order ..."
+        m.productSelectScreen.visible = "true"
+        m.hint.visible = "true"
+        m.selectHint.visible = "true"
+        m.productGrid.setFocus(true)
     end if
 end function
 
@@ -315,9 +454,14 @@ function onOrderStatus(msg as Object)
     status = msg.getData().status
     if status = 1 ' order success
         ? "> order success"
-        tid = m.store.orderStatus.getChild(0).purchaseId
-        ' validate the order by checking if it is now entitled on the roku side
-        makeRequest("url", {uri: Substitute("https://apipub.roku.com/listen/transaction-service.svc/validate-transaction/{0}/{1}", m.devAPIKey, tid)}, "validateOrder")
+        #if sampleHardCodedValues
+            m.publisherAccessToken = "TOK8ZQEDDR8AWVJF8AH"
+            writeAccessToken()
+        #else
+            tid = m.store.orderStatus.getChild(0).purchaseId
+            ' validate the order by checking if it is now entitled on the roku side
+            makeRequest("url", {uri: Substitute("https://apipub.roku.com/listen/transaction-service.svc/validate-transaction/{0}/{1}", m.devAPIKey, tid)}, "validateOrder")
+        #end if
     else 'error in doing order
         ? "> order error ..."
         ? "> error status " status ": " msg.getData().statusMessage
@@ -407,6 +551,13 @@ function grantAccess()
     m.dialogBox.buttons = ["Continue"]
     m.top.dialog = m.dialogBox
     print "!-------------------access granted-------------------!"
+    ' hide product screen and display the content screen'
+    m.productSelectScreen.visible = false
+    m.selectHint.text = "Navigate content grid"
+    m.selectHint.visible = true
+    m.hint.visible = true
+    m.contentScreen.visible = true
+    m.contentScreenRowList.SetFocus(true)
 end function
 
 function makeRequest(requestType as String, parameters as Object, callback as String)

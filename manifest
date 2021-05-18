@@ -1,16 +1,11 @@
 title= On Device Authentication Sample
 subtitle=A demo on authenticating purchases on device
 major_version=1
-minor_version=1
+minor_version=2
 build_version=00001
 
-mm_icon_focus_hd=pkg:/images/icon_focus_hd.png
-mm_icon_side_hd=pkg:/images/icon_side_hd.png
-mm_icon_focus_sd=pkg:/images/icon_focus_sd.png
-mm_icon_side_sd=pkg:/images/icon_focus_sd.png
-splash_screen_sd=pkg:/images/splash_sd.jpg
+mm_icon_focus_hd=pkg:/images/icon_focus_hd.jpg
 splash_screen_hd=pkg:/images/splash_hd.jpg
-splash_screen_fhd=pkg:/images/splash_fhd.jpg
 splash_color=#000000
 splash_min_time=1000
 
