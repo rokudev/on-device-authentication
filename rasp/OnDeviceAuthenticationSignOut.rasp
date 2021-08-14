@@ -1,0 +1,10 @@
+params:   
+    rasp_version: 1
+    default_keypress_wait: 2
+    channels:   
+        On-device authentication: dev
+steps:  
+    - launch: On-device authentication
+    - press: info
+    - press: ok
+    - press: back

@@ -1,0 +1,25 @@
+params:   
+    rasp_version: 1
+    default_keypress_wait: 2
+    channels:   
+       On-device authentication: dev
+steps:  
+    - launch: On-device authentication
+    - press: down
+    - press: ok
+    - press: down
+    - press: ok
+    - press: ok
+    - text: script-login
+    - press: down
+    - press: down
+    - press: down
+    - press: down
+    - press: ok
+    - press: down
+    - press: ok
+    - text: script-password
+    - press: down
+    - press: ok
+    - press: down
+    - press: ok
