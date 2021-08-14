@@ -22,7 +22,7 @@
       id="SignUpTitle"
       height="50"
       width="600"
-      text = "Sign In to your account"
+      text = "Create your account"
       translation="[120,205]"
       font = "font:LargeBoldSystemFont" />
     <TextEditBox
