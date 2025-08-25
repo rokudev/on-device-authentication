@@ -492,7 +492,7 @@ function validateOrder(msg as Object) as void
         print "order is entitled, store access token on device and grant access to user"
         m.itemSelected.productBought = true
         #if sampleHardCodedValues
-            m.publisherAccessToken = "TOK8ZQEDDR8AWVJF8AH"
+            m.publisherAccessToken = "<PUBLISHER_ACCESS_TOKEN>"
             writeAccessToken()
         #else
             makeRequest("url", {uri: "PUBLISHER TOKEN KEY LINK GOES HERE"}, "getWriteAccessToken")
