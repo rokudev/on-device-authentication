@@ -127,7 +127,7 @@ function onProductSelected() as void
     #if sampleHardCodedValues
         ? "< getting publisher information"
         m.publisherEntitlement = "true"
-        m.publisherAccessToken = "TOK8ZQEDDR8AWVJF8AH"
+        m.publisherAccessToken = "<PUBLISHER_ACCESS_TOKEN>"
         ?"< publisher is entitled " m.publisherEntitlement
         ?"< publisher token: " m.publisherAccessToken
         ' check roku side if this item has already been purchased
