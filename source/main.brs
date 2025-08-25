@@ -11,8 +11,8 @@ sub Main()
     ' m.global.addField("config", "assocarray", false)
     ' m.global.config = {
     '     publisherEntitlement: true,
-    '     publisherTokenKey: "8ZQEDDR8AWVJF8AH",
-    '     publisherRefreshToken: "MSEFAJ7A54SE3LBE",
+    '     publisherTokenKey: "<PUBLISHER_TOKEN_KEY>",
+    '     publisherRefreshToken: "PUBLISHER_REFRESH_TOKEN",
     '     publisherEndPoint: "sample.com/endpoint/1234",
     ' }
 
@@ -24,3 +24,4 @@ sub Main()
         end if
     end while
 end sub
+
